@@ -63,6 +63,17 @@ class User(UserMixin, db.Model):
         if self.is_following(user):
             self.following.remove(user)
 
+    def following_posts(self):
+        Author = so.aliased(User)
+        Follower = so.aliased(User)
+        return (
+            sa.select(Post)
+            .join(Post.author.of_type(Author))
+            .join(Author.followers.of_type(Follower))
+            .where(Follower.id == self.id)
+            .order_by(Post.timestamp.desc())
+        )
+
     def is_following(self, user):
         query = self.following.select().where(User.id == user.id)
         return db.session.scalar(query) is not None
